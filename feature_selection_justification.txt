@@ -1,0 +1,446 @@
+================================================================================
+  UNSINKABLE — TITANIC SURVIVAL ANALYSIS
+  Feature Selection Justification Report
+  Part 3: Feature Selection (10 Marks)
+================================================================================
+
+METHOD SUMMARY
+──────────────
+Two-step selection process was used:
+
+  Step 1 — Correlation Filter (threshold: |r| > 0.90)
+           Removed features that were near-perfect mirrors of another feature.
+           Kept the one with the stronger link to survival.
+
+  Step 2 — Random Forest Importance Ranking
+           Trained a Random Forest (300 trees) on remaining features.
+           Ranked every feature by how much it contributed to correct predictions.
+           Mean importance score = 0.0286 (used as the cutoff threshold).
+           Features scoring ABOVE this threshold → KEPT.
+           Features scoring BELOW this threshold → DROPPED.
+
+Mean importance threshold: 0.0286
+Total features before selection: 35
+Total features selected: 12
+Total features dropped: 23
+
+================================================================================
+  SECTION A — FEATURES KEPT (12 features)
+================================================================================
+
+These 12 features all scored above the mean importance threshold of 0.0286
+in the Random Forest ranking. Each one carries a meaningful, unique signal
+that helps the model predict who survived.
+
+────────────────────────────────────────────────────────────────────────────────
+1. Sex_male  |  Importance: 0.1760  |  Rank: 1st out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  The single strongest predictor in the entire dataset. Female passengers
+  survived at 74.8% while male passengers survived at only 22.3% — a gap
+  of over 50 percentage points. This reflects the "women and children first"
+  lifeboat boarding rule enforced by the Titanic's crew.
+
+  Sex_female was DROPPED during the correlation filter (Step 1) because it is
+  the exact mathematical mirror of Sex_male (|r| = 1.0). Keeping both would
+  add zero new information. Sex_male was chosen over Sex_female because both
+  carry identical predictive power — only one is needed.
+
+PLAIN ENGLISH:
+  Being male was the biggest single disadvantage for survival on the Titanic.
+
+────────────────────────────────────────────────────────────────────────────────
+2. IsWoman_or_Child  |  Importance: 0.1137  |  Rank: 2nd out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  This is an engineered feature (created in Part 2) that combines Sex and
+  AgeGroup into one binary signal: 1 = female OR under 13 years old, 0 = else.
+  It directly encodes the "women and children first" evacuation rule as a
+  machine-readable variable. Its importance score of 0.1137 confirms the rule
+  was genuinely followed — making it the 2nd most powerful predictor.
+
+  Although it overlaps with Sex_male, it adds extra signal by capturing
+  young boys (Masters) who also received priority — something Sex_male alone
+  misses.
+
+PLAIN ENGLISH:
+  Being a woman OR a child gave you the strongest chance of getting a
+  lifeboat seat. This feature captures that rule directly.
+
+────────────────────────────────────────────────────────────────────────────────
+3. Title_Mr  |  Importance: 0.0974  |  Rank: 3rd out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  Title was extracted from the passenger Name column (e.g. "Smith, Mr. John"
+  → "Mr"). Title_Mr flags adult men specifically — a group with the lowest
+  survival rate on the ship. It adds signal beyond Sex_male because it also
+  excludes male children (who have "Master" as their title and had much higher
+  survival rates). This distinction between adult men and male children is
+  something Sex_male alone cannot capture.
+
+PLAIN ENGLISH:
+  "Mr" meant adult male — the group least likely to survive. The title
+  column separated adult men from boys in a way that raw sex alone could not.
+
+────────────────────────────────────────────────────────────────────────────────
+4. Age_x_Pclass  |  Importance: 0.0773  |  Rank: 4th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  This is an interaction feature (Age multiplied by passenger class). It
+  captures a compound effect: being old AND in a lower class was significantly
+  more dangerous than either factor alone. A 60-year-old in 3rd class faced
+  compounding disadvantages — reduced mobility AND a cabin far from lifeboats.
+  A 60-year-old in 1st class had crew assistance and closer lifeboat access.
+  The interaction term captures this nuance that neither Age nor Pclass
+  could express separately.
+
+PLAIN ENGLISH:
+  Age penalised you more if you were also in a lower class. Multiplying
+  the two numbers together captures that double disadvantage in one feature.
+
+────────────────────────────────────────────────────────────────────────────────
+5. LogFare  |  Importance: 0.0602  |  Rank: 5th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  LogFare is the log-transformed version of the ticket price (log1p(Fare)).
+  The raw Fare column has extreme right skew — most passengers paid under
+  £30 but a handful paid over £200, which distorts the model. Applying a
+  log transform compresses that skew and makes the distribution roughly
+  normal. LogFare outranked raw Fare slightly (0.0602 vs 0.0572) but both
+  were kept because they capture slightly different aspects of the price
+  signal — the transformed shape vs the raw magnitude.
+
+PLAIN ENGLISH:
+  Ticket price strongly predicted survival (richer = better odds). The log
+  version makes that price signal cleaner for the model to learn from.
+
+────────────────────────────────────────────────────────────────────────────────
+6. Fare  |  Importance: 0.0572  |  Rank: 6th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  Raw ticket price. Wealthier passengers had access to upper-deck cabins
+  closer to lifeboats, and were more likely to be in 1st class where survival
+  rates were highest. Despite being skewed, the raw Fare value still scored
+  above the mean importance threshold. Kept alongside LogFare because the
+  two are not perfectly correlated (|r| = 0.87, just below the 0.90 removal
+  threshold) and each captures a slightly different signal.
+
+PLAIN ENGLISH:
+  Simply put — the more you paid for your ticket, the better your survival
+  odds. This raw price figure still adds useful information to the model.
+
+────────────────────────────────────────────────────────────────────────────────
+7. LogAge  |  Importance: 0.0529  |  Rank: 7th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  Log-transformed version of Age (log1p(Age)). Age has a mild right skew
+  and several outliers among elderly passengers. The log transform smooths
+  this and helps distance-based models (like KNN or SVM) that are sensitive
+  to scale. LogAge and Age are both kept because they were not perfectly
+  correlated after transformation and each scored above the threshold.
+
+PLAIN ENGLISH:
+  Age affected survival — children had priority, elderly passengers struggled
+  to reach lifeboats. The log version gives the model a cleaner version of
+  that age signal.
+
+────────────────────────────────────────────────────────────────────────────────
+8. Age  |  Importance: 0.0518  |  Rank: 8th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  Raw passenger age. Children under 13 had priority boarding. Elderly
+  passengers (60+) had reduced mobility and lower survival rates. Age
+  scored just above the importance threshold (0.0518 vs threshold 0.0286)
+  and was retained. It adds complementary signal to LogAge — the raw
+  magnitude of age (e.g. "this person is 65") vs the transformed shape.
+
+PLAIN ENGLISH:
+  How old you were mattered. Very young passengers got priority; very old
+  passengers were disadvantaged. The model needs this raw number.
+
+────────────────────────────────────────────────────────────────────────────────
+9. FarePerPerson  |  Importance: 0.0518  |  Rank: 9th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  This is an engineered feature: Fare divided by FamilySize. It normalises
+  ticket price by group size. A family of 4 paying £40 total spent £10 per
+  person — very different from a solo traveller paying £40. FarePerPerson
+  is a better proxy for individual wealth than raw Fare. It scored above the
+  threshold and is not highly correlated with Fare alone (a family's total
+  fare and their per-person fare can differ substantially).
+
+PLAIN ENGLISH:
+  Splitting the ticket price by group size gives a fairer measure of how
+  wealthy each individual passenger actually was.
+
+────────────────────────────────────────────────────────────────────────────────
+10. Pclass_x_Fare  |  Importance: 0.0484  |  Rank: 10th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  Passenger class multiplied by ticket price. This interaction captures the
+  combined wealth-and-status signal: a 1st-class passenger who also paid a
+  high fare had compounding survival advantages (crew priority + upper deck
+  proximity + social status). A 3rd-class passenger who paid little had
+  compounding disadvantages. Neither Pclass nor Fare alone captures this
+  compound effect as effectively as their product.
+
+PLAIN ENGLISH:
+  Being in a higher class AND paying more created compounding advantages.
+  Multiplying the two together captures that combined effect.
+
+────────────────────────────────────────────────────────────────────────────────
+11. Title_Miss  |  Importance: 0.0453  |  Rank: 11th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  "Miss" was the title given to unmarried women and girls. This group had
+  high survival rates reflecting both lifeboat priority (female) and
+  typically younger age. Title_Miss adds signal beyond Sex_male because it
+  specifically identifies young/unmarried females — a sub-group that
+  survived at particularly high rates compared to married women (Mrs) or
+  elderly women. The distinction between Miss and Mrs carried real
+  demographic meaning aboard the Titanic.
+
+PLAIN ENGLISH:
+  Unmarried women and girls survived at very high rates. This title flag
+  captures that specific group more precisely than sex alone.
+
+────────────────────────────────────────────────────────────────────────────────
+12. Title_Mrs  |  Importance: 0.0445  |  Rank: 12th out of 35
+────────────────────────────────────────────────────────────────────────────────
+WHY KEPT:
+  "Mrs" identified married women. Like Title_Miss, this group received
+  lifeboat priority. However, married women were often travelling with
+  families — some stayed behind with husbands or struggled to board with
+  children — leading to slightly different survival patterns than Miss.
+  Title_Mrs scored just above the threshold and provides a meaningful
+  demographic distinction that complements Title_Miss.
+
+PLAIN ENGLISH:
+  Married women also had high survival rates but with slightly different
+  patterns to unmarried women. The model benefits from knowing the difference.
+
+================================================================================
+  SECTION B — FEATURES DROPPED (23 features)
+================================================================================
+
+These features were removed either in the correlation filter (Step 1) or
+because they scored BELOW the mean importance threshold of 0.0286 in the
+Random Forest ranking (Step 2). Each one added too little new information
+to justify including it in the final model.
+
+────────────────────────────────────────────────────────────────────────────────
+13. Pclass  |  Importance: 0.0255  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Passenger class (1st, 2nd, 3rd) on its own scored below the threshold
+  once the interaction features Pclass_x_Fare and Age_x_Pclass were
+  introduced. Those two interaction terms absorbed and surpassed the raw
+  class signal. Keeping Pclass alongside its own interactions would be
+  partially redundant.
+
+────────────────────────────────────────────────────────────────────────────────
+14. Title_Rare_Male  |  Importance: 0.0119  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Rare male titles (Dr, Rev, Col, Capt, Major) collectively represent a
+  very small number of passengers. Their survival patterns were inconsistent
+  — some high-status males survived, others did not — making this a noisy,
+  low-information feature. Scored well below threshold.
+
+────────────────────────────────────────────────────────────────────────────────
+15. FamilySize  |  Importance: 0.0115  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  FamilySize was used to create FarePerPerson and IsAlone — those derived
+  features absorbed its predictive signal more effectively. The raw
+  FamilySize number itself scored below threshold once those derivatives
+  were present. Redundant in the presence of its own children.
+
+────────────────────────────────────────────────────────────────────────────────
+16. SibSp  |  Importance: 0.0109  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Number of siblings/spouses aboard. Once FamilySize was engineered
+  (SibSp + Parch + 1), the raw SibSp column became redundant — FamilySize
+  already captures this information in a more complete form. Low importance
+  score confirms this.
+
+────────────────────────────────────────────────────────────────────────────────
+17. Parch  |  Importance: 0.0090  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Number of parents/children aboard. Same reasoning as SibSp — once
+  FamilySize was created, the individual components SibSp and Parch became
+  largely redundant. Scored well below threshold.
+
+────────────────────────────────────────────────────────────────────────────────
+18. Age_was_missing  |  Importance: 0.0067  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  This indicator flag (1 = Age was originally missing, 0 = Age was present)
+  was created during data cleaning to preserve the fact that some ages were
+  imputed. However, it scored very low — meaning whether or not a passenger's
+  age was missing did not meaningfully affect survival prediction beyond what
+  the imputed Age value itself already captured.
+
+────────────────────────────────────────────────────────────────────────────────
+19. IsAlone  |  Importance: 0.0065  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Binary flag for passengers travelling alone. While solo travellers did
+  have lower survival rates, this signal was already captured more
+  effectively by FarePerPerson (solo travellers have higher per-person fares)
+  and FamilySize interactions. IsAlone on its own added minimal additional
+  information after those features were present.
+
+────────────────────────────────────────────────────────────────────────────────
+20. Embarked_S  |  Importance: 0.0064  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Flag for passengers who boarded at Southampton. Port of embarkation showed
+  some correlation with class distribution (Southampton had more 3rd-class
+  passengers) but this class information was already captured more directly
+  by Pclass and Fare features. Embarked features added little new signal.
+
+────────────────────────────────────────────────────────────────────────────────
+21. Cabin_known  |  Importance: 0.0058  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Binary flag for whether a cabin number was recorded (1 = yes, 0 = no).
+  While cabin availability correlated with class (1st-class passengers were
+  more likely to have recorded cabins), this signal was already better
+  represented by Fare, Pclass, and the Deck features. Low importance
+  confirmed it added minimal unique information.
+
+────────────────────────────────────────────────────────────────────────────────
+22. Title_Rare_Female  |  Importance: 0.0050  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Rare female titles (Lady, Countess, Dona) represent an extremely small
+  number of passengers — too few for the model to learn a reliable pattern
+  from. Their survival signal was already captured by Sex_male and
+  IsWoman_or_Child. Negligible importance score.
+
+────────────────────────────────────────────────────────────────────────────────
+23. AgeGroup_Child  |  Importance: 0.0049  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Binary flag for passengers under 13. The child survival signal was already
+  captured more powerfully by IsWoman_or_Child (which explicitly includes
+  children) and Age/LogAge (which capture the continuous age relationship).
+  The separate AgeGroup_Child flag added redundant information.
+
+────────────────────────────────────────────────────────────────────────────────
+24. AgeGroup_Adult  |  Importance: 0.0040  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Adults (age 20-59) are the majority of passengers. This flag was
+  essentially the complement of Child + Teen + Senior flags — it added
+  little discriminating power since most passengers fell into this group.
+  Scored well below threshold.
+
+────────────────────────────────────────────────────────────────────────────────
+25. Embarked_C  |  Importance: 0.0039  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Flag for passengers who boarded at Cherbourg. Cherbourg passengers were
+  slightly wealthier on average but this wealth signal was already captured
+  by Fare and Pclass. The port itself added minimal predictive value
+  independently. Below threshold.
+
+────────────────────────────────────────────────────────────────────────────────
+26. Embarked_Q  |  Importance: 0.0024  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Flag for passengers who boarded at Queenstown. This port was predominantly
+  3rd-class Irish emigrants — however, that class signal was already captured
+  by Pclass and Fare far more directly. Scored near zero importance.
+
+────────────────────────────────────────────────────────────────────────────────
+27. Deck_D  |  Importance: 0.0023  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Individual deck flags (A through G) all scored very low. While deck
+  location correlated with class, that class signal was already captured
+  by Fare, Pclass, and their interaction. Additionally, 79% of passengers
+  had no cabin recorded — making all Deck flags based on a small, potentially
+  unrepresentative subset of passengers.
+
+────────────────────────────────────────────────────────────────────────────────
+28-34. Deck_A, Deck_B, Deck_C, Deck_E, Deck_F, Deck_G  |  DROPPED
+        Importances: 0.0013, 0.0003, 0.0003, 0.0010, 0.0006, 0.0014
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  All individual deck letter flags scored extremely close to zero. The same
+  reasoning as Deck_D applies. With 79.1% of cabin values missing, these
+  features describe only ~186 passengers out of 891 — too small a subset
+  to produce reliable survival patterns. The deck information that does
+  exist is already proxied by Fare and Pclass.
+
+────────────────────────────────────────────────────────────────────────────────
+35. AgeGroup_Teen  |  Importance: 0.0022  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Teenagers (13-19) showed no distinct survival pattern separate from adults.
+  They were old enough to not receive the "children first" priority but young
+  enough to not face the mobility disadvantages of seniors. The continuous
+  Age and LogAge features already capture this age range without needing a
+  separate flag.
+
+────────────────────────────────────────────────────────────────────────────────
+36. AgeGroup_Senior  |  Importance: 0.0000  |  DROPPED — below threshold
+────────────────────────────────────────────────────────────────────────────────
+WHY DROPPED:
+  Passengers over 60. Scored essentially zero importance — the lowest of all
+  35 features. The senior survival disadvantage was already captured by the
+  continuous Age and LogAge features, and by the Age_x_Pclass interaction.
+  A separate binary Senior flag added nothing the model could not already
+  learn from the age value itself.
+
+────────────────────────────────────────────────────────────────────────────────
+NOTE — Features removed in Correlation Filter (Step 1, before RF ranking):
+────────────────────────────────────────────────────────────────────────────────
+  Sex_female   → Perfect mirror of Sex_male (|r| = 1.0). Identical
+                 information. Sex_male was retained as it was encountered
+                 first in the ranking. Keeping both would be pure redundancy.
+
+  Deck_U       → "Unknown deck" flag was highly correlated with Cabin_known
+                 (|r| > 0.90) — they describe the same thing from opposite
+                 directions. Cabin_known was retained as it had marginally
+                 higher correlation with survival.
+
+================================================================================
+  FINAL SUMMARY
+================================================================================
+
+  Features KEPT (12):
+  ───────────────────
+  Sex_male, IsWoman_or_Child, Title_Mr, Age_x_Pclass, LogFare,
+  Fare, LogAge, Age, FarePerPerson, Pclass_x_Fare, Title_Miss, Title_Mrs
+
+  Features DROPPED (23):
+  ──────────────────────
+  Pclass, Title_Rare_Male, FamilySize, SibSp, Parch, Age_was_missing,
+  IsAlone, Embarked_S, Cabin_known, Title_Rare_Female, AgeGroup_Child,
+  AgeGroup_Adult, Embarked_C, Embarked_Q, Deck_D, Deck_A, Deck_B,
+  Deck_C, Deck_E, Deck_F, Deck_G, AgeGroup_Teen, AgeGroup_Senior
+  + Sex_female and Deck_U (removed in correlation filter)
+
+  Key insight:
+  ────────────
+  The 12 selected features reduce noise while preserving the five most
+  important survival signals identified in this dataset:
+
+    1. Gender (Sex_male, IsWoman_or_Child, Title_Mr, Title_Miss, Title_Mrs)
+    2. Wealth  (Fare, LogFare, FarePerPerson, Pclass_x_Fare)
+    3. Age     (Age, LogAge, Age_x_Pclass)
+    4. Social rank  (Title features proxy class + gender simultaneously)
+    5. Compound effects  (interaction terms capture what single features miss)
+
+  5-fold Cross-Validated ROC-AUC with selected features: 0.787
+  (A score of 1.0 = perfect prediction. 0.5 = random guessing.)
+
+================================================================================
+  End of Feature Selection Justification Report
+  Project: Unsinkable | AI Assignment 2 | Titanic Dataset Analysis
+================================================================================
