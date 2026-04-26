@@ -28,7 +28,7 @@ The full pipeline covers:
 ## Project Structure
 
 ```
-unsinkable/
+Titanic_unsinkable/
 │
 ├── data/
 │   ├── train.csv                  ← Raw Titanic dataset
@@ -38,7 +38,7 @@ unsinkable/
 │   └── selected_features.txt      ← Final 12 features
 │
 ├── notebooks/
-│   └── Titanic_Feature_Engineering.ipynb   ← Full walkthrough
+│   └── Titanic_Feature_Engineering.ipynb   ← Full walkthrough into my project
 │
 ├── scripts/
 │   ├── data_cleaning.py           ← Part 1 pipeline
@@ -193,4 +193,4 @@ MIT — free to use for academic and personal projects.
 
 ---
 
-*Project: Unsinkable · AI Assignment 2 · Titanic Dataset Analysis*
+*Project: Titanic_Unsinkable · AI Assignment 2 · Titanic Dataset Analysis*
