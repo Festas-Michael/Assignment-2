@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unsinkable — Titanic Survival Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=IBM+Plex+Mono:wght@400;600&family=Source+Serif+4:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0d1b2a;
+    --ocean:   #1a3a5c;
+    --steel:   #2c5282;
+    --tide:    #2b6cb0;
+    --foam:    #bee3f8;
+    --rust:    #c0392b;
+    --gold:    #d4a017;
+    --cream:   #f7f3e9;
+    --ink:     #1a1a2e;
+    --mist:    #e8edf5;
+    --success: #276749;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--navy);
+    color: var(--cream);
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.75;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ─────────────────────────────────────────────────────── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(26,58,92,0.9) 0%, transparent 70%),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 60px,
+        rgba(255,255,255,0.015) 60px,
+        rgba(255,255,255,0.015) 61px
+      ),
+      var(--navy);
+    padding: 4rem 2rem;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1440' height='400' viewBox='0 0 1440 400'%3E%3Cpath d='M0,320 C240,280 480,360 720,320 C960,280 1200,340 1440,310 L1440,400 L0,400Z' fill='rgba(26,58,92,0.4)'/%3E%3Cpath d='M0,360 C300,330 600,380 900,350 C1100,330 1300,360 1440,345 L1440,400 L0,400Z' fill='rgba(13,27,42,0.6)'/%3E%3C/svg%3E") bottom/cover no-repeat;
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.8s ease both;
+  }
+
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3.5rem, 9vw, 8rem);
+    font-weight: 900;
+    font-style: italic;
+    line-height: 0.95;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, var(--foam) 40%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 1rem;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  .hero-sub {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1rem, 2.5vw, 1.35rem);
+    font-weight: 400;
+    color: rgba(247,243,233,0.7);
+    max-width: 560px;
+    margin: 0 auto 3rem;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-stats {
+    display: flex;
+    gap: 3rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.8s 0.35s ease both;
+  }
+
+  .stat-card {
+    text-align: center;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 1.2rem 2rem;
+    backdrop-filter: blur(8px);
+    transition: transform 0.3s, border-color 0.3s;
+  }
+  .stat-card:hover { transform: translateY(-4px); border-color: var(--gold); }
+
+  .stat-value {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.6rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(247,243,233,0.55);
+    margin-top: 0.4rem;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    color: rgba(247,243,233,0.4);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: fadeUp 1s 0.8s ease both;
+  }
+
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s ease-in-out infinite;
+  }
+
+  /* ── LAYOUT ───────────────────────────────────────────────────── */
+  .container { max-width: 1000px; margin: 0 auto; padding: 0 2rem; }
+
+  section {
+    padding: 5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.75rem;
+  }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+    color: #fff;
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--foam);
+    margin: 2.5rem 0 0.75rem;
+  }
+
+  p { color: rgba(247,243,233,0.8); margin-bottom: 1rem; }
+
+  /* ── PIPELINE FLOW ────────────────────────────────────────────── */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin: 2.5rem 0;
+  }
+
+  .pipe-step {
+    background: linear-gradient(135deg, rgba(26,58,92,0.5), rgba(13,27,42,0.8));
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 1.8rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+  }
+
+  .pipe-step:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .pipe-step::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--tide));
+  }
+
+  .pipe-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: rgba(212,160,23,0.15);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+  }
+
+  .pipe-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.5rem;
+  }
+
+  .pipe-desc { font-size: 0.9rem; color: rgba(247,243,233,0.65); }
+
+  .pipe-badge {
+    display: inline-block;
+    margin-top: 1rem;
+    background: rgba(212,160,23,0.15);
+    border: 1px solid rgba(212,160,23,0.3);
+    color: var(--gold);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+  }
+
+  /* ── DECISION TABLE ───────────────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.9rem;
+  }
+
+  thead { background: rgba(26,58,92,0.8); }
+
+  th {
+    padding: 0.85rem 1rem;
+    text-align: left;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    border-bottom: 2px solid rgba(212,160,23,0.3);
+  }
+
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: rgba(247,243,233,0.8);
+    vertical-align: top;
+  }
+
+  tr:hover td { background: rgba(255,255,255,0.03); }
+
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85em;
+    background: rgba(43,108,176,0.25);
+    border: 1px solid rgba(43,108,176,0.4);
+    padding: 0.1em 0.4em;
+    border-radius: 4px;
+    color: var(--foam);
+  }
+
+  /* ── SURVIVAL BARS ────────────────────────────────────────────── */
+  .survival-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin: 2rem 0;
+  }
+
+  .bar-chart { }
+  .bar-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+  }
+
+  .bar-name { color: rgba(247,243,233,0.8); }
+  .bar-val  { font-family: 'IBM Plex Mono', monospace; color: var(--gold); font-size: 0.85rem; }
+
+  .bar-track {
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 0.9rem;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 0;
+  }
+
+  .bar-fill.green  { background: linear-gradient(90deg, #276749, #48bb78); }
+  .bar-fill.red    { background: linear-gradient(90deg, #9b2335, #c0392b); }
+  .bar-fill.blue   { background: linear-gradient(90deg, #1a3a5c, #2b6cb0); }
+  .bar-fill.orange { background: linear-gradient(90deg, #744210, #e67e22); }
+
+  /* ── FEATURE CARDS ────────────────────────────────────────────── */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.2rem;
+    margin: 2rem 0;
+  }
+
+  .feature-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 1.4rem;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .feature-card:hover {
+    border-color: rgba(212,160,23,0.4);
+    transform: translateY(-3px);
+  }
+
+  .fc-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--foam);
+    margin-bottom: 0.4rem;
+  }
+
+  .fc-formula {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--gold);
+    background: rgba(212,160,23,0.08);
+    border-left: 2px solid var(--gold);
+    padding: 0.3rem 0.6rem;
+    margin: 0.5rem 0;
+    border-radius: 0 4px 4px 0;
+  }
+
+  .fc-desc { font-size: 0.85rem; color: rgba(247,243,233,0.55); }
+
+  /* ── IMPORTANCE CHART ─────────────────────────────────────────── */
+  .importance-list { list-style: none; margin: 1.5rem 0; }
+
+  .imp-item {
+    display: grid;
+    grid-template-columns: 200px 1fr 60px;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: opacity 0.5s, transform 0.5s;
+  }
+
+  .imp-item.visible { opacity: 1; transform: translateX(0); }
+
+  .imp-feat {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--foam);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .imp-feat.selected { color: var(--gold); }
+
+  .imp-track {
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+
+  .imp-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--ocean), var(--tide));
+    width: 0;
+    transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .imp-fill.selected { background: linear-gradient(90deg, #744210, var(--gold)); }
+
+  .imp-score {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: rgba(247,243,233,0.45);
+    text-align: right;
+  }
+
+  /* ── FINDINGS ─────────────────────────────────────────────────── */
+  .findings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.2rem;
+    margin: 2rem 0;
+  }
+
+  .finding {
+    background: linear-gradient(135deg, rgba(26,58,92,0.3), rgba(13,27,42,0.5));
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border-left: 3px solid var(--gold);
+  }
+
+  .finding-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  .finding p { font-size: 0.9rem; margin: 0; }
+
+  /* ── MODEL RESULT ─────────────────────────────────────────────── */
+  .model-box {
+    background: linear-gradient(135deg, rgba(39,103,73,0.2), rgba(13,27,42,0.8));
+    border: 1px solid rgba(39,103,73,0.5);
+    border-radius: 16px;
+    padding: 2.5rem;
+    text-align: center;
+    margin: 2rem 0;
+  }
+
+  .model-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 5rem;
+    font-weight: 900;
+    color: #48bb78;
+    line-height: 1;
+  }
+
+  .model-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: rgba(247,243,233,0.5);
+    margin-top: 0.5rem;
+  }
+
+  /* ── FOOTER ───────────────────────────────────────────────────── */
+  footer {
+    background: rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 3rem 0;
+    text-align: center;
+  }
+
+  footer p {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    color: rgba(247,243,233,0.3);
+  }
+
+  footer a { color: var(--gold); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ── NAV ──────────────────────────────────────────────────────── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(13,27,42,0.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0.8rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transform: translateY(-100%);
+    transition: transform 0.4s ease;
+  }
+
+  nav.visible { transform: translateY(0); }
+
+  .nav-brand {
+    font-family: 'Playfair Display', serif;
+    font-style: italic;
+    font-size: 1.1rem;
+    color: var(--gold);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(247,243,233,0.6);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--gold); }
+
+  /* ── DIVIDER ──────────────────────────────────────────────────── */
+  .divider {
+    width: 60px;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    margin: 1.5rem 0;
+  }
+
+  /* ── ANIMATIONS ───────────────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; transform: scaleY(1); }
+    50%       { opacity: 0.9; transform: scaleY(1.15); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  @media (max-width: 700px) {
+    .pipeline { grid-template-columns: 1fr; }
+    .survival-grid { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .imp-item { grid-template-columns: 140px 1fr 50px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <span class="nav-brand">Unsinkable</span>
+  <ul class="nav-links">
+    <li><a href="#cleaning">Cleaning</a></li>
+    <li><a href="#engineering">Engineering</a></li>
+    <li><a href="#selection">Selection</a></li>
+    <li><a href="#findings">Findings</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="top">
+  <p class="hero-eyebrow">AI Assignment 2 · Titanic Dataset Analysis</p>
+  <h1>Unsinkable</h1>
+  <p class="hero-sub">A data-driven post-mortem of the RMS Titanic — transforming 891 passenger records into a survival prediction model through rigorous feature engineering.</p>
+  <div class="hero-stats">
+    <div class="stat-card">
+      <div class="stat-value">891</div>
+      <div class="stat-label">Passengers</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">41.5%</div>
+      <div class="stat-label">Survival Rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">37</div>
+      <div class="stat-label">Features Built</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">0.787</div>
+      <div class="stat-label">ROC-AUC Score</div>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    scroll
+  </div>
+</section>
+
+<!-- PIPELINE OVERVIEW -->
+<section>
+  <div class="container">
+    <div class="section-label">Project Architecture</div>
+    <h2>Three-Part Pipeline</h2>
+    <p>Each stage feeds the next. Raw CSV in. Predictive model out.</p>
+    <div class="pipeline reveal">
+      <div class="pipe-step">
+        <div class="pipe-num">01</div>
+        <div class="pipe-title">Data Cleaning</div>
+        <p class="pipe-desc">Missing value imputation, outlier capping, consistency checks. Produces <code>train_cleaned.csv</code>.</p>
+        <span class="pipe-badge">10 marks</span>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">02</div>
+        <div class="pipe-title">Feature Engineering</div>
+        <p class="pipe-desc">Derived features, title extraction, deck parsing, log transforms, one-hot encoding. 11 → 37 columns.</p>
+        <span class="pipe-badge">30 marks</span>
+      </div>
+      <div class="pipe-step">
+        <div class="pipe-num">03</div>
+        <div class="pipe-title">Feature Selection</div>
+        <p class="pipe-desc">Correlation filter, Random Forest importance ranking, threshold pruning. 37 → 12 features.</p>
+        <span class="pipe-badge">10 marks</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PART 1: DATA CLEANING -->
+<section id="cleaning">
+  <div class="container">
+    <div class="section-label">Part 1 · Data Cleaning</div>
+    <h2>Reading the Gaps</h2>
+    <p>Before any model can learn from this data, we must confront what's missing — and make deliberate, principled decisions about how to handle it.</p>
+    <div class="divider"></div>
+
+    <h3>Missing Value Audit</h3>
+    <table class="reveal">
+      <thead>
+        <tr>
+          <th>Column</th><th>Missing</th><th>Strategy</th><th>Rationale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Cabin</code></td>
+          <td style="color:#c0392b">79.1%</td>
+          <td>Extract deck → drop raw</td>
+          <td>Too sparse to impute; the deck letter is recoverable and meaningful</td>
+        </tr>
+        <tr>
+          <td><code>Age</code></td>
+          <td style="color:#e67e22">19.4%</td>
+          <td>Grouped median (Pclass × Sex)</td>
+          <td>Sub-group medians reduce bias — a 1st-class woman has a very different typical age than a 3rd-class man</td>
+        </tr>
+        <tr>
+          <td><code>Embarked</code></td>
+          <td style="color:#27ae60">0.7%</td>
+          <td>Mode imputation ('S')</td>
+          <td>Only 6 rows missing; Southampton is overwhelmingly most common (~72%)</td>
+        </tr>
+        <tr>
+          <td><code>Fare</code></td>
+          <td style="color:#27ae60">&lt;0.1%</td>
+          <td>Class-level median</td>
+          <td>Single missing passenger — class-conditional median is the most appropriate proxy</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Outlier Handling</h3>
+    <p>Fare exhibits severe right skew (a few first-class suites cost 10× the median). Rather than remove these passengers — they're real data — we cap values at the 99th percentile and apply a log transform in Part 2.</p>
+    <table class="reveal">
+      <thead>
+        <tr><th>Feature</th><th>Method</th><th>Threshold</th><th>Rows Affected</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>Fare</code></td>
+          <td>99th percentile cap</td>
+          <td>£213.15</td>
+          <td>9 passengers</td>
+        </tr>
+        <tr>
+          <td><code>Age</code></td>
+          <td>Hard clip</td>
+          <td>[0.5, 80]</td>
+          <td>Physiologically impossible values only</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Survival by Sex & Class — Preliminary View</h3>
+    <div class="survival-grid reveal">
+      <div>
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;">Survival by Sex</p>
+        <div class="bar-label"><span class="bar-name">Female</span><span class="bar-val">74.8%</span></div>
+        <div class="bar-track"><div class="bar-fill green" data-w="74.8"></div></div>
+        <div class="bar-label"><span class="bar-name">Male</span><span class="bar-val">22.3%</span></div>
+        <div class="bar-track"><div class="bar-fill red" data-w="22.3"></div></div>
+      </div>
+      <div>
+        <p style="font-family:'IBM Plex Mono',monospace;font-size:0.75rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);margin-bottom:1rem;">Survival by Class</p>
+        <div class="bar-label"><span class="bar-name">1st Class</span><span class="bar-val">55.5%</span></div>
+        <div class="bar-track"><div class="bar-fill green" data-w="55.5"></div></div>
+        <div class="bar-label"><span class="bar-name">2nd Class</span><span class="bar-val">44.6%</span></div>
+        <div class="bar-track"><div class="bar-fill blue" data-w="44.6"></div></div>
+        <div class="bar-label"><span class="bar-name">3rd Class</span><span class="bar-val">33.8%</span></div>
+        <div class="bar-track"><div class="bar-fill red" data-w="33.8"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PART 2: FEATURE ENGINEERING -->
+<section id="engineering">
+  <div class="container">
+    <div class="section-label">Part 2 · Feature Engineering</div>
+    <h2>Building What the Data Implies</h2>
+    <p>The raw columns are just the surface. Beneath them lie richer signals — family dynamics, social standing, physical proximity to lifeboats — all recoverable through careful engineering.</p>
+    <div class="divider"></div>
+
+    <h3>Derived Features</h3>
+    <div class="feature-grid reveal">
+      <div class="feature-card">
+        <div class="fc-name">FamilySize</div>
+        <div class="fc-formula">SibSp + Parch + 1</div>
+        <div class="fc-desc">Captures the full travelling group. Solo travellers and very large families both show lower survival rates — revealing a sweet-spot of 2–4.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">IsAlone</div>
+        <div class="fc-formula">1 if FamilySize == 1</div>
+        <div class="fc-desc">Binary flag for solo travellers. Travelling alone meant no family member to help secure a lifeboat spot.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">Title</div>
+        <div class="fc-formula">Name.split(',')[1].split('.')[0]</div>
+        <div class="fc-desc">Extracted from Name field. Maps to: Mr, Mrs, Miss, Master, Rare_Male, Rare_Female. Encodes both gender and social rank simultaneously.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">Deck</div>
+        <div class="fc-formula">Cabin[0] or 'U' (unknown)</div>
+        <div class="fc-desc">First letter of Cabin. Upper decks (A–C) were 1st class and closer to lifeboats. 'U' = missing cabin = mostly 3rd class.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">AgeGroup</div>
+        <div class="fc-formula">Child / Teen / Adult / Senior</div>
+        <div class="fc-desc">Ordinal bucketing of Age. Children (&lt;13) had priority boarding. Seniors (&gt;60) had reduced mobility and lower survival.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">FarePerPerson</div>
+        <div class="fc-formula">Fare / FamilySize</div>
+        <div class="fc-desc">Normalises Fare by group size — a £40 ticket for four is very different from a £40 solo fare. Better proxy for true wealth.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">IsWoman_or_Child</div>
+        <div class="fc-formula">(Sex == 'female') | (AgeGroup == 'Child')</div>
+        <div class="fc-desc">Encodes the "women and children first" lifeboat rule as an explicit engineered signal — the strongest domain-knowledge feature.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">LogFare &amp; LogAge</div>
+        <div class="fc-formula">log1p(Fare), log1p(Age)</div>
+        <div class="fc-desc">Log transforms reduce right-skew and make distributions approximately normal — essential for distance-based and linear models.</div>
+      </div>
+      <div class="feature-card">
+        <div class="fc-name">Interaction Features</div>
+        <div class="fc-formula">Pclass × Fare, Age × Pclass</div>
+        <div class="fc-desc">Captures compound effects — a wealthy 1st-class passenger (high Pclass×Fare) had compounding survival advantages vs a poor 3rd-class child.</div>
+      </div>
+    </div>
+
+    <h3>Encoding Strategy</h3>
+    <table class="reveal">
+      <thead>
+        <tr><th>Feature</th><th>Encoding</th><th>Why</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>Sex</code></td><td>One-hot</td><td>Nominal; no ordinal relationship</td></tr>
+        <tr><td><code>Embarked</code></td><td>One-hot</td><td>Nominal port codes (S/C/Q)</td></tr>
+        <tr><td><code>Title</code></td><td>One-hot</td><td>Nominal social categories</td></tr>
+        <tr><td><code>Deck</code></td><td>One-hot</td><td>Nominal ship deck letters</td></tr>
+        <tr><td><code>AgeGroup</code></td><td>One-hot</td><td>Nominal categories (non-linear survival pattern)</td></tr>
+        <tr><td><code>Pclass</code></td><td>Ordinal (kept as int)</td><td>1 &lt; 2 &lt; 3 is a natural ordering with semantic meaning</td></tr>
+      </tbody>
+    </table>
+
+    <p style="margin-top:1rem;font-size:0.9rem;color:rgba(247,243,233,0.5);">
+      After all engineering steps: <strong style="color:var(--foam)">11 raw features → 37 engineered columns</strong>
+    </p>
+  </div>
+</section>
+
+<!-- PART 3: FEATURE SELECTION -->
+<section id="selection">
+  <div class="container">
+    <div class="section-label">Part 3 · Feature Selection</div>
+    <h2>Cutting the Noise</h2>
+    <p>More features isn't always better. Redundant and correlated features add noise, slow training, and hurt generalisation. We use a two-step filter to arrive at the optimal subset.</p>
+    <div class="divider"></div>
+
+    <h3>Step 1 — Correlation Filter (threshold: |r| &gt; 0.90)</h3>
+    <p>Highly correlated feature pairs are identified; from each pair, the feature with the lower absolute correlation to the target (<code>Survived</code>) is removed. This dropped <strong style="color:var(--gold)">2 redundant features</strong> — <code>Sex_female</code> (redundant with <code>Sex_male</code>) and <code>Deck_U</code> (strongly correlated with <code>Cabin_known</code>).</p>
+
+    <h3>Step 2 — Random Forest Importance (300 trees, max_depth=8)</h3>
+    <p>A Random Forest was trained on the 35 post-correlation features. Features are ranked by Mean Decrease in Impurity (MDI). The 12 features above the mean importance threshold are selected for the final model.</p>
+
+    <ul class="importance-list" id="imp-list">
+      <li class="imp-item" data-delay="0">
+        <span class="imp-feat selected">Sex_male</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="100"></div></div>
+        <span class="imp-score">0.1760</span>
+      </li>
+      <li class="imp-item" data-delay="60">
+        <span class="imp-feat selected">IsWoman_or_Child</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="64.6"></div></div>
+        <span class="imp-score">0.1137</span>
+      </li>
+      <li class="imp-item" data-delay="120">
+        <span class="imp-feat selected">Title_Mr</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="55.3"></div></div>
+        <span class="imp-score">0.0974</span>
+      </li>
+      <li class="imp-item" data-delay="180">
+        <span class="imp-feat selected">Age_x_Pclass</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="43.9"></div></div>
+        <span class="imp-score">0.0773</span>
+      </li>
+      <li class="imp-item" data-delay="240">
+        <span class="imp-feat selected">LogFare</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="34.2"></div></div>
+        <span class="imp-score">0.0602</span>
+      </li>
+      <li class="imp-item" data-delay="300">
+        <span class="imp-feat selected">Fare</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="32.5"></div></div>
+        <span class="imp-score">0.0572</span>
+      </li>
+      <li class="imp-item" data-delay="360">
+        <span class="imp-feat selected">LogAge</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="30.1"></div></div>
+        <span class="imp-score">0.0529</span>
+      </li>
+      <li class="imp-item" data-delay="420">
+        <span class="imp-feat selected">Age</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="29.4"></div></div>
+        <span class="imp-score">0.0518</span>
+      </li>
+      <li class="imp-item" data-delay="480">
+        <span class="imp-feat selected">FarePerPerson</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="29.4"></div></div>
+        <span class="imp-score">0.0518</span>
+      </li>
+      <li class="imp-item" data-delay="540">
+        <span class="imp-feat selected">Pclass_x_Fare</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="27.5"></div></div>
+        <span class="imp-score">0.0484</span>
+      </li>
+      <li class="imp-item" data-delay="600">
+        <span class="imp-feat selected">Title_Miss</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="25.7"></div></div>
+        <span class="imp-score">0.0453</span>
+      </li>
+      <li class="imp-item" data-delay="660">
+        <span class="imp-feat selected">Title_Mrs</span>
+        <div class="imp-track"><div class="imp-fill selected" data-w="25.3"></div></div>
+        <span class="imp-score">0.0445</span>
+      </li>
+      <li class="imp-item" data-delay="720">
+        <span class="imp-feat">IsAlone</span>
+        <div class="imp-track"><div class="imp-fill" data-w="18.0"></div></div>
+        <span class="imp-score">0.0317</span>
+      </li>
+      <li class="imp-item" data-delay="780">
+        <span class="imp-feat">Pclass</span>
+        <div class="imp-track"><div class="imp-fill" data-w="15.5"></div></div>
+        <span class="imp-score">0.0272</span>
+      </li>
+      <li class="imp-item" data-delay="840">
+        <span class="imp-feat">FamilySize</span>
+        <div class="imp-track"><div class="imp-fill" data-w="12.0"></div></div>
+        <span class="imp-score">0.0211</span>
+      </li>
+    </ul>
+
+    <p style="font-size:0.82rem;color:rgba(247,243,233,0.4);margin-top:0.5rem;">
+      ● <span style="color:var(--gold)">Gold</span> = selected (above mean threshold 0.0286) &nbsp;|&nbsp; Grey = rejected
+    </p>
+
+    <div class="model-box reveal">
+      <div class="model-score">0.787</div>
+      <div class="model-label">5-Fold Cross-Validated ROC-AUC · Random Forest Baseline</div>
+      <p style="margin-top:1rem;font-size:0.9rem;color:rgba(247,243,233,0.6);">
+        Achieved with 12 selected features — a strong baseline for further hyperparameter tuning or ensemble methods.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- KEY FINDINGS -->
+<section id="findings">
+  <div class="container">
+    <div class="section-label">Key Findings</div>
+    <h2>What the Data Reveals</h2>
+    <div class="divider"></div>
+    <div class="findings-grid reveal">
+      <div class="finding">
+        <div class="finding-title">The Gender Gap Was Stark</div>
+        <p>Female passengers survived at 74.8% vs 22.3% for males — a 3.4× difference. Sex is the single most important predictive feature.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-title">Class Was Life or Death</div>
+        <p>1st class had 55.5% survival, 2nd class 44.6%, 3rd class 33.8%. But class worked differently by gender — 1st-class women had ~95% survival; 3rd-class men around 12%.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-title">Title Encodes Hidden Signal</div>
+        <p><code>Master</code> (young boys) survived far better than <code>Mr</code> (adult men). Title simultaneously captures gender AND social standing in a single engineered feature.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-title">Family Size Is Non-Linear</div>
+        <p>Travelling with 1–3 family members improved survival odds. Solo travellers and families of 5+ saw significantly lower rates — making FamilySize a richer signal than SibSp or Parch alone.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-title">Deck Proxies for Class</div>
+        <p>Upper decks (A–C) had higher survival. The 'U' (unknown) deck, comprising passengers without a recorded cabin, skews heavily toward 3rd class and shows the lowest survival.</p>
+      </div>
+      <div class="finding">
+        <div class="finding-title">Interaction Features Add Value</div>
+        <p><code>Age_x_Pclass</code> ranked 4th in importance — capturing that old age was more penalising in lower classes, and youth more protective in upper classes.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <p>
+      <strong style="color:rgba(247,243,233,0.6)">Unsinkable</strong> · AI Assignment 2 · Titanic Dataset Analysis
+    </p>
+    <p style="margin-top:0.5rem;">
+      Pipeline: <code style="background:none;border:none;color:rgba(247,243,233,0.35);font-size:0.7rem;">data_cleaning.py → feature_engineering.py → feature_selection.py</code>
+    </p>
+    <p style="margin-top:0.5rem;">
+      Dataset: <a href="https://www.kaggle.com/c/titanic" target="_blank">Kaggle Titanic — Machine Learning from Disaster</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+  // NAV show on scroll
+  const nav = document.getElementById('nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('visible', window.scrollY > 80);
+  });
+
+  // Intersection Observer for reveal animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Bar fill animation
+  const barObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.querySelectorAll('.bar-fill').forEach(bar => {
+          const w = bar.dataset.w;
+          requestAnimationFrame(() => { bar.style.width = w + '%'; });
+        });
+        barObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+
+  document.querySelectorAll('.survival-grid').forEach(el => barObserver.observe(el));
+
+  // Importance list animation
+  const impObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        document.querySelectorAll('.imp-item').forEach((item, i) => {
+          const delay = parseInt(item.dataset.delay || 0);
+          setTimeout(() => {
+            item.classList.add('visible');
+            const fill = item.querySelector('.imp-fill');
+            if (fill) fill.style.width = fill.dataset.w + '%';
+          }, delay);
+        });
+        impObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  const impList = document.getElementById('imp-list');
+  if (impList) impObserver.observe(impList);
+</script>
+</body>
+</html>

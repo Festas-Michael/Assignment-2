@@ -1,0 +1,12 @@
+Sex_male
+IsWoman_or_Child
+Title_Mr
+Age_x_Pclass
+LogFare
+Fare
+LogAge
+Age
+FarePerPerson
+Pclass_x_Fare
+Title_Miss
+Title_Mrs
